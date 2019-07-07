@@ -9,8 +9,8 @@ class databases:
     def __init__(self):
         self.arr=[]
 
-    def getMetricValues(self, UUID): 
-        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='yash9491', db='dmc_dev')
+    def getMetricValues(self, UUID, config): 
+        conn = pymysql.connect(host=config.get("host"), port=config.get("port"), user=config.get("user"), passwd=config.get("passwd"), db=config.get("db"))
         cur = conn.cursor()
         select_tuple = (UUID)
         cur.execute("SELECT pm.MetricId,pm.ProjectGUID,mt.Metric,ct.CategoryName,pm.BeforeDevOpsHrs, pm.BeforeDevOpsCost, pm.AfterDevOpsHrs, pm.AfterDevOpsCost, pm.ReadOnly FROM ProjectMetricDetails pm JOIN Metrics mt ON pm.MetricId = mt.MetricId JOIN Categories ct ON mt.CategoryCd = ct.CategoryCd WHERE pm.ProjectGUID = %s", select_tuple)
@@ -33,45 +33,45 @@ class databases:
             metrics_list.append(d)
         return json.dumps(metrics_list, use_decimal=True)
 
-    def insertProjectDetails(self,projectname, clientname, industrygroup, worklocation):
-        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='yash9491', db='dmc_dev')
+    def insertProjectDetails(self,projectname, clientname, industrygroup, worklocation, config):
+        conn = pymysql.connect(host=config.get("host"), port=config.get("port"), user=config.get("user"), passwd=config.get("passwd"), db=config.get("db"))
         cur = conn.cursor()
         myuuid = uuid.uuid1()
         insertQuery="INSERT INTO Projects (`UserId`, `ProjectGUID`, `ProjectName`, `ClientName`, `IndustryGroup`,`WorkLocaation`) VALUES (%s,%s,%s,%s,%s,%s)"
         insert_tuple = (1,str(myuuid),projectname, clientname, industrygroup, worklocation)
         cur.execute(insertQuery, insert_tuple)
         conn.commit()
-        self.callDefaultInsertProjectMetricValues(myuuid)
+        self.callDefaultInsertProjectMetricValues(myuuid, config)
         return str(myuuid)
 
-    def callDefaultInsertProjectMetricValues(self,uuid):
-        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='yash9491', db='dmc_dev')
+    def callDefaultInsertProjectMetricValues(self,uuid, config):
+        conn = pymysql.connect(host=config.get("host"), port=config.get("port"), user=config.get("user"), passwd=config.get("passwd"), db=config.get("db"))
         cur = conn.cursor()
         args=[str(uuid)]
         cur.callproc('InsertDefaultProjectMetricDetails',args)
         conn.commit()
     
-    def updateMetricValues(self,metricdata, UUID):
-        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='yash9491', db='dmc_dev')
+    def updateMetricValues(self,metricdata, UUID, config):
+        conn = pymysql.connect(host=config.get("host"), port=config.get("port"), user=config.get("user"), passwd=config.get("passwd"), db=config.get("db"))
         cur = conn.cursor()
         for data in metricdata:
             updatequery = "UPDATE ProjectMetricDetails SET BeforeDevOpsHrs = %s, BeforeDevOpsCost = %s, AfterDevOpsHrs = %s, AfterDevOpsCost = %s, ReadOnly = %s WHERE ProjectGUID = %s AND MetricId = %s"
             args = (data.get('BeforeDevOpsHrs'), data.get('BeforeDevOpsCost'), data.get('AfterDevOpsHrs'), data.get('AfterDevOpsCost'), data.get('ReadOnly'), UUID, data.get('Metricid'))
             cur.execute(updatequery, args)
         conn.commit()
-        self.calculateFinalMetrics(UUID)
+        self.calculateFinalMetrics(UUID, config)
 
-    def calculateFinalMetrics(self, UUID):
-        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='yash9491', db='dmc_dev')
+    def calculateFinalMetrics(self, UUID, config):
+        conn = pymysql.connect(host=config.get("host"), port=config.get("port"), user=config.get("user"), passwd=config.get("passwd"), db=config.get("db"))
         cur = conn.cursor()
         args=[UUID]
         cur.callproc('CalculateFinalMetrics', args)
         conn.commit()
     
-    def getCalculatedProjects(self): 
-        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='yash9491', db='dmc_dev')
+    def getCalculatedProjects(self, config): 
+        conn = pymysql.connect(host=config.get("host"), port=config.get("port"), user=config.get("user"), passwd=config.get("passwd"), db=config.get("db"))
         cur = conn.cursor()
-        cur.execute("Select pr.ProjectGUID, pr.ProjectName, pr.ClientName, pr.IndustryGroup, pr.WorkLocaation, met.TotalHoursSaved, met.TotalCostSaved, met.TotalResourcesSaved from projectcalculations met JOIN projects pr ON pr.ProjectGUID = met.ProjectGUID")
+        cur.execute("Select pr.ProjectGUID, pr.ProjectName, pr.ClientName, pr.IndustryGroup, pr.WorkLocaation, met.TotalHoursSaved, met.TotalCostSaved, met.TotalResourcesSaved from ProjectCalculations met JOIN Projects pr ON pr.ProjectGUID = met.ProjectGUID")
         data = cur.fetchall()
         cur.close()
         conn.close()
@@ -90,8 +90,8 @@ class databases:
             metrics_list.append(d)
         return json.dumps(metrics_list, use_decimal=True)
 
-    def deleteProject(self, UUID):
-        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='yash9491', db='dmc_dev')
+    def deleteProject(self, UUID, config):
+        conn = pymysql.connect(host=config.get("host"), port=config.get("port"), user=config.get("user"), passwd=config.get("passwd"), db=config.get("db"))
         cur = conn.cursor()
         cur.execute("Delete from ProjectCalculations where ProjectGUID = %s", UUID)
         cur.execute("Delete from ProjectMetricDetails where ProjectGUID = %s", UUID)
