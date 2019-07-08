@@ -1,8 +1,8 @@
 
 {
-    "host" : "das.clnzdpckz8xb.us-east-2.rds.amazonaws.com", 
+    "host" : "", 
     "port" : 3306, 
     "user" : "admin", 
-    "passwd" : "srinidas2019", 
-    "db" : "DMC_Dev"
+    "passwd" : "", 
+    "db" : ""
 }
